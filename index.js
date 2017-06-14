@@ -1,8 +1,9 @@
-const fetch = require('node-fetch')
-const fs    = require('fs')
-const https = require('https')
-const path  = require('path')
-const unzip = require('unzip')
+const fetch  = require('node-fetch')
+const fs     = require('fs')
+const https  = require('https')
+const path   = require('path')
+const unzip  = require('unzip')
+const mkdirp = require('mkdirp')
 
 const buildFileName        = 'build.zip'
 const builderUrl           = process.argv[2]
@@ -47,15 +48,27 @@ console.log(`\tRevision: ${projectRevision}`)
 console.log(`\tLocation: ${targetLocation}`)
 
 
-fetch(`${builderUrl}/download`, {
-	method: 'post',
-	body: JSON.stringify({
-		remote: projectRemote,
-		revision: projectRevision,
-		'mango-cli': '>=0.29',
-		dataset: localConfig,
-	})
-})
+Promise.resolve()
+	.then(() => new Promise((resolve, reject) => {
+		mkdirp(targetLocation, (error) => {
+			if (error) {
+				reject(error)
+			} else {
+				resolve()
+			}
+		})
+	}))
+	.then(() =>
+		fetch(`${builderUrl}/download`, {
+			method: 'post',
+			body: JSON.stringify({
+				remote: projectRemote,
+				revision: projectRevision,
+				'mango-cli': '>=0.29',
+				dataset: localConfig,
+			})
+		})
+	)
 	.then((response) => response.json())
 	.then((result) => {
 		if (!result.status || result.status === 'error' || !result.url) {
